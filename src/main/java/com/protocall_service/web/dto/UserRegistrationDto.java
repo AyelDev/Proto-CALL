@@ -7,6 +7,8 @@ public class UserRegistrationDto {
     private int role;
     private boolean enabled;
 
+    public UserRegistrationDto() {
+    }
 
     public UserRegistrationDto(String username, String password, int role, boolean enabled) {
         this.username = username;
