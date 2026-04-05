@@ -1,10 +1,10 @@
-package com.protocall_service;
+package com.protocall.callchat_service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class CallServiceApplicationTests {
+class CallchatServiceApplicationTests {
 
 	@Test
 	void contextLoads() {

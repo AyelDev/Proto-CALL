@@ -1,4 +1,4 @@
-package com.protocall_service;
+package com.protocall.callchat_service;
 
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
@@ -7,7 +7,7 @@ public class ServletInitializer extends SpringBootServletInitializer {
 
 	@Override
 	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-		return application.sources(CallServiceApplication.class);
+		return application.sources(CallchatServiceApplication.class);
 	}
 
 }

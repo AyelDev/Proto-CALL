@@ -1,13 +1,13 @@
-package com.protocall_service;
+package com.protocall.callchat_service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class CallServiceApplication {
+public class CallchatServiceApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(CallServiceApplication.class, args);
+		SpringApplication.run(CallchatServiceApplication.class, args);
 	}
 
 }
