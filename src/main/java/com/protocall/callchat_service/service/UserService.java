@@ -22,16 +22,15 @@ public class UserService implements UserDetailsService {
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         PrtUser prtc_user = userRepository.findByEmail(email);
         
-        if(prtc_user != null){
-            var springuser = User.withUsername(prtc_user.getEmail())
-                .password(prtc_user.getPassword())
-                .roles(prtc_user.getRole())
-                .build();
-
-                return springuser;
+        if(prtc_user == null) {
+        	throw new UsernameNotFoundException("User not found with email" + email);
         }
- 
-        return null;
+        
+        return User.withUsername(prtc_user.getEmail())
+        		.password(prtc_user.getPassword())
+        		.roles(prtc_user.getRole())
+        		.build();
+        
     }
 
     

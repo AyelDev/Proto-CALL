@@ -20,9 +20,11 @@ public class SecurityConfig {
          .anyRequest().authenticated()
        )
        .formLogin(form -> form
-         .defaultSuccessUrl("/login", true)
+         .loginPage("/login")
+         .defaultSuccessUrl("/dashboard", true)
+         .permitAll()
        )
-       .logout(config -> config.logoutSuccessUrl("/logout"))
+       .logout(config -> config.logoutSuccessUrl("/login"))
        .build();
     }
 
