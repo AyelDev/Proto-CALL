@@ -1,16 +1,138 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>RTC Demo</title>
 </head>
+
 <body>
     <form th:action="@{/logout}" method="post">
         <button type="submit">Logout</button>
-	</form>
-	<label for="Video_Code">Enter Chat Code</label>
+    </form>
+    <!-- <label for="Video_Code">Enter Chat Code</label>
     <input type="text" name="Video_Code" placeholder="Enter Chat Code">
-	<label for="Initiate_Video">Initiate Video Call</label>
+	<label for="Initiate_Video">Initiate Video Call</label> -->
+
+    <h2>Local Video</h2>
+    <video id="localVideo" autoplay playsinline muted></video>
+
+    <h2>Remote Video</h2>
+    <video id="remoteVideo" autoplay playsinline></video>
+
+    <button onclick="startCall()">Start Call</button>
+
+    <!-- <script src="app.js"></script> -->
+
+
+  <script>
+    const socket = new WebSocket("ws://localhost:8080/socket");
+    
+    const peer = new RTCPeerConnection({
+        iceServers: [
+            { urls: "stun:stun.l.google.com:19302" }
+        ]
+    });
+
+    const localVideo = document.getElementById("localVideo");
+    const remoteVideo = document.getElementById("remoteVideo");
+    let iceCandidateQueue = [];
+
+    // 1. Get local media streams
+    navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true
+    }).then(stream => {
+        localVideo.srcObject = stream;
+        stream.getTracks().forEach(track => {
+            peer.addTrack(track, stream);
+        });
+    }).catch(err => console.error("Media access denied: ", err));
+
+    // 2. Handle incoming remote stream
+    peer.ontrack = event => {
+        if (remoteVideo) {
+            remoteVideo.srcObject = event.streams[0];
+        }
+    };
+
+    // 3. Send local ICE candidates over WebSocket
+    peer.onicecandidate = event => {
+        if (event.candidate && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({
+                type: "candidate",
+                candidate: event.candidate
+            }));
+        }
+    };
+
+    // 4. Create and send Offer safely after connection opens
+    async function startCall() {
+        try {
+            const offer = await peer.createOffer();
+            await peer.setLocalDescription(offer);
+            
+            socket.send(JSON.stringify({
+                type: "offer",
+                offer: offer
+            }));
+            console.log("Offer sent successfully.");
+        } catch (e) {
+            console.error("Error starting call: ", e);
+        }
+    }
+
+    socket.onopen = () => {
+        console.log("Connected to Signaling Server.");
+        // If this is the caller, trigger startCall() here or via a UI Button
+        // startCall(); 
+    };
+
+    // 5. Centralized Signalling Receiver
+    socket.onmessage = async event => {
+        const message = JSON.parse(event.data);
+        console.log("Signaling received type:", message.type);
+
+        try {
+            if (message.type === "offer") {
+                await peer.setRemoteDescription(new RTCSessionDescription(message.offer));
+                const answer = await peer.createAnswer();
+                await peer.setLocalDescription(answer);
+
+                socket.send(JSON.stringify({
+                    type: "answer",
+                    answer: answer
+                }));
+
+                // Process any ICE candidates that arrived early
+                while (iceCandidateQueue.length > 0) {
+                    const cand = iceCandidateQueue.shift();
+                    await peer.addIceCandidate(cand);
+                }
+
+            } else if (message.type === "answer") {
+                await peer.setRemoteDescription(new RTCSessionDescription(message.answer));
+                
+                while (iceCandidateQueue.length > 0) {
+                    const cand = iceCandidateQueue.shift();
+                    await peer.addIceCandidate(cand);
+                }
+
+            } else if (message.type === "candidate") {
+                const candidate = new RTCIceCandidate(message.candidate);
+                if (peer.remoteDescription) {
+                    await peer.addIceCandidate(candidate);
+                } else {
+                    iceCandidateQueue.push(candidate);
+                }
+            }
+        } catch (err) {
+            console.error("Error processing signaling message: ", err);
+        }
+    };
+</script>
+
 </body>
+
 </html>
